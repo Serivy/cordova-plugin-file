@@ -58,7 +58,7 @@ var pathsPrefix = {
 
 const notImplementedYet = async (args) => {
     log("not implemented" + JSON.stringify(args));
-    throw "no";
+    throw "not implemented";
 }
 
 const toEntry = function(name, fullPath, lastModified = null) {
@@ -72,7 +72,6 @@ const toEntry = function(name, fullPath, lastModified = null) {
 }
 
 const requestAllPathsHandler = async ([args]) => {
-    log("requestAllaths");
     return pathsPrefix;
 }
 
@@ -221,8 +220,6 @@ const getFileHandler = async ([args]) => {
             // If create is true, the path doesn't exist, and no other error occurs,
             // getFile must create it as a zero-length file and return a corresponding
             // FileEntry.
-            
-            log("opening for writing");
             let newFileEntry = await new Promise((resolve, reject) => { fs.open(fullPath, 'w', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
             await new Promise((resolve, reject) => { fs.close(newFileEntry, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     
@@ -314,7 +311,6 @@ const getFileHandler = async ([args]) => {
 const readEntriesHandler = async ([args]) => {
     var [dirname] = args;
     var results = [];
-    log("reading " + dirname)
     let files = await new Promise((resolve, reject) => { fs.readdir(dirname, {withFileTypes: true}, (err, files) => { if (err) { reject(err); } else { resolve(files); } }) });
     for (var file of files) {
         let path = dirname + file.name;
@@ -338,7 +334,6 @@ const readEntriesHandler = async ([args]) => {
 
 const getFileMetadata = async ([args]) => {
     var [baseURLstr] = args;
-    log("getFileMetadata");
     // log("getFileMetadata " + JSON.stringify(args));
     
     // JSONObject metadata = new JSONObject();
@@ -469,9 +464,6 @@ const toRootFileSystem = (uri, fsName, fsPath, isDirectory) => {
 
 const requestFileSystemHandler = async ([args]) => {
     const [fstype, requiredSize] = args;
-    
-    log("requestFileSystem " + fstype);
-
     let requestedPath = pathsPrefix.applicationDirectory;
     let stats = await new Promise((resolve, reject) => { fs.stat(requestedPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     
