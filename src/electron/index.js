@@ -174,8 +174,15 @@ const getDirectoryHandler = async ([args]) => {
 }
 
 const removeRecursively = async ([args]) => {
-    log("removeRecursively");
-    notImplementedYet(args);
+    var [fullPath] = args;
+    // Has to be a directory?
+    let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+    if (stats.isDirectory()) {
+        // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fspromises_rm_path_options
+        await new Promise((resolve, reject) => { fs.rm(fullPath, { recursive: true }, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+    } else {
+        throw FileError.INVALID_STATE_ERR;
+    }
 }
 
 /**
@@ -398,7 +405,7 @@ const removeHandler = async ([args]) => {
     let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     if (stats.isDirectory()) {
         // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fspromises_rm_path_options
-        await new Promise((resolve, reject) => { fs.rm(fullPath, { recursive: true }, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+        await new Promise((resolve, reject) => { fs.rm(fullPath, { recursive: false }, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     } else {
         await new Promise((resolve, reject) => { fs.unlink(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     }
