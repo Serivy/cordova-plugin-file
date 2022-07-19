@@ -232,8 +232,6 @@ const getFileHandler = async ([args]) => {
             }
         } else if (options.create === true && stats) {
             // https://nodejs.org/docs/latest-v10.x/api/fs.html#fs_fs_open_path_flags_mode_callback
-            log("opening for appending");
-
             if (stats.isFile()) {
                 newFileEntry = await new Promise((resolve, reject) => { fs.open(fullPath, 'w', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
 
@@ -364,7 +362,6 @@ const getFileMetadata = async ([args]) => {
     } catch (e) {
         return null;
     }
-
 }
 
 const setMetadata = async ([args]) => {
@@ -397,7 +394,6 @@ const copyToHandler = async ([args]) => {
 }
 
 const removeHandler = async ([args]) => {
-    console.log(process.version)
     var [fullPath] = args;
     let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     if (stats.isDirectory()) {
@@ -432,7 +428,8 @@ const readAsTextHandler = async ([args]) => {
     const [fname, encoding, start, end] = args;
     const buffer = Buffer.alloc(end - start);
     let fd = await new Promise((resolve, reject) => { fs.open(fname, 'r', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
-    let read = await new Promise((resolve, reject) => { fs.read(fd, buffer, 0, buffer.length, start, (err, fd) => { if (err) { reject(err); } else { resolve(buffer); } }) });
+    await new Promise((resolve, reject) => { fs.read(fd, buffer, 0, buffer.length, start, (err) => { if (err) { reject(err); } else { resolve(buffer); } }) });
+    await new Promise((resolve, reject) => { fs.close(fd, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     return buffer.toString(encoding);
 }
 
