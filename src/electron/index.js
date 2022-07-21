@@ -52,16 +52,13 @@ var pathsPrefix = {
     // Read-only directory where the application is installed.
     applicationDirectory: nodePath.dirname(electron.app.getAppPath()) + nodePath.sep,
     // Where to put app-specific data files.
-    dataDirectory: electron.app.getPath('userData') + nodePath.sep,
+    dataDirectory: nodePath.resolve(electron.app.getPath('userData'), 'userData') + nodePath.sep,
     // Cached files that should survive app restarts.
     // Apps should not rely on the OS to delete files in here.
-    cacheDirectory: electron.app.getPath('cache') + nodePath.sep
-};
+    cacheDirectory: electron.app.getPath('temp') + nodePath.sep,
 
-const notImplementedYet = async (args) => {
-    log("not implemented" + JSON.stringify(args));
-    throw "not implemented";
-}
+    tempDirectory: electron.app.getPath('temp') + nodePath.sep
+};
 
 const toEntry = function(name, fullPath, lastModified = null) {
     return {
@@ -374,8 +371,7 @@ const getFileMetadata = async ([args]) => {
 }
 
 const setMetadata = async ([args]) => {
-    log("setMetadata");
-    notImplementedYet(args);
+    throw "not implemented";
 }
 
 const moveToHandler = async ([args]) => {
@@ -414,8 +410,7 @@ const removeHandler = async ([args]) => {
 }
 
 const getParentHandler = async ([args]) => {
-    log("getParentHandler");
-    notImplementedYet(args);
+    throw "not implemented";
 }
 
 const readAsDataURLHandler = async ([args]) => {
@@ -477,6 +472,60 @@ const writeHandler = async ([args]) => {
     return writeBytes;
 }
 
+const requestFileSystemHandler = async ([args]) => {
+    const [fstype, requiredSize] = args;
+    let requestedPath = fstype == 1 ? pathsPrefix.dataDirectory : pathsPrefix.tempDirectory;
+    // Could check to see if requiredSize storage exists on disk.
+
+    try {
+        const resolved = await resolveLocalFileSystemURIHandler([[requestedPath]]);
+    
+        return {
+            name: requestedPath,
+            root: resolved
+        };
+    } catch(e) {
+        throw FileError.NOT_FOUND_ERR;
+    }
+}
+
+const resolveLocalFileSystemURIHandler = async ([args]) => {
+    var path = nodePath.resolve(args[0]);
+
+    if (!path) {
+        throw FileError.NOT_FOUND_ERR;
+    }
+
+    if (Object.values(pathsPrefix).map(o => o.startsWith(path)).indexOf(true) >= 0) {
+        try {
+            /** @type {fs.Stats} */
+            let stats = await new Promise((resolve, reject) => { fs.stat(path, (err, s) => { if (err) { reject(err); } else { resolve(s); } }) });
+            return toDirectoryEntry(path, 'temporary');
+        } catch (e) {
+            // May not exist, create it.
+            await new Promise((resolve, reject) => { fs.mkdir(path, (err) => { if (err) { reject(err); } else { resolve(); } }) });
+            return toDirectoryEntry(path, 'temporary');
+        }
+    } else {
+        throw FileError.NOT_READABLE_ERR;
+    }
+}
+
+const notifyNotSupported = async ([args]) => {
+    throw "not implemented";
+}
+
+const _getLocalFilesystemPathHandler = async ([args]) => {
+    throw "not implemented";
+}
+
+const pathToFileSystemEntry = (requestedPath, stats) => {
+    return {
+        name: requestedPath,
+        root: toRootFileSystem(requestedPath, nodePath.basename(requestedPath), nodePath.dirname(requestedPath), stats.isDirectory())
+    };
+}
+
 const toRootFileSystem = (uri, fsName, fsPath, isDirectory) => {
     return {
         isFile: !isDirectory,
@@ -489,30 +538,17 @@ const toRootFileSystem = (uri, fsName, fsPath, isDirectory) => {
     };
 }
 
-const requestFileSystemHandler = async ([args]) => {
-    const [fstype, requiredSize] = args;
-    let requestedPath = pathsPrefix.cacheDirectory;
-    let stats = await new Promise((resolve, reject) => { fs.stat(requestedPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
-    
+const toDirectoryEntry = (path, filesystem) => {
+    const name = nodePath.basename(path);
     return {
-        name: requestedPath,
-        root: toRootFileSystem(requestedPath, nodePath.basename(requestedPath), nodePath.dirname(requestedPath), stats.isDirectory())
+        isFile: false,
+        isDirectory: true,
+        name: name,
+        fullPath: path,
+        filesystem: filesystem ?? 'temporary',
+        filesystemName: filesystem ? filesystem : 'temporary',
+        nativeURL: path
     };
-}
-
-const resolveLocalFileSystemURIHandler = async ([args]) => {
-    log("resolveLocalFileSystemURIHandler");
-    notImplementedYet(args);
-}
-
-const notifyNotSupported = async ([args]) => {
-    log("notifyNotSupported");
-    notImplementedYet(args);
-}
-
-const _getLocalFilesystemPathHandler = async ([args]) => {
-    log("_getLocalFilesystemPathHandler");
-    notImplementedYet(args);
 }
 
 // https://cordova.apache.org/docs/en/11.x/reference/cordova-plugin-file/index.html
@@ -541,3 +577,26 @@ module.exports = {
     // method below is used for backward compatibility w/ old File plugin implementation
     _getLocalFilesystemPath: _getLocalFilesystemPathHandler
 };
+
+// sessionData
+// console.log(
+//     ["home","appData","userData","temp","exe","module","desktop","documents","downloads","music","pictures","videos","recent","logs","crashDumps"].map(o => "id:"+o +": "+ electron.app.getPath(o)+"\n")
+// );
+
+// [
+//     'id:home: <USER>\n',
+//     'id:appData: <USER>\\AppData\\Roaming\n',
+//     'id:userData: <USER>\\AppData\\Roaming\\Electron\n',
+//     'id:temp: <USER>\\AppData\\Local\\Temp\n',
+//     'id:exe: C:\\dev\\cordova-plugin-file-electron-test\\node_modules\\electron\\dist\\electron.exe\n',
+//     'id:module: C:\\dev\\cordova-plugin-file-electron-test\\node_modules\\electron\\dist\\electron.exe\n',
+//     'id:desktop: <USER>\\Desktop\n',
+//     'id:documents: <USER>\\Documents\n',
+//     'id:downloads: <USER>\\Downloads\n',
+//     'id:music: <USER>\\Music\n',
+//     'id:pictures: <USER>\\Pictures\n',
+//     'id:videos: <USER>\\Videos\n',
+//     'id:recent: <USER>\\AppData\\Roaming\\Microsoft\\Windows\\Recent\n',      
+//     'id:logs: <USER>\\AppData\\Roaming\\Electron\\logs\n',
+//     'id:crashDumps: <USER>\\AppData\\Roaming\\Electron\\Crashpad\n'
+//   ]

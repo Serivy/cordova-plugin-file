@@ -212,6 +212,19 @@ properties are `null`.
 
 \* The OS may periodically clear this directory
 
+### Electron File System Layout
+
+| Device Path                                           | `cordova.file.*`            | r/w? | persistent? | OS clears | private |
+|:------------------------------------------------------|:----------------------------|:----:|:-----------:|:---------:|:-------:|
+| `ms-appdata:///`                                      | applicationDirectory        | r    |     N/A     |     N/A   |   Yes   |
+| &nbsp;&nbsp;&nbsp;`<data>/userData/`                  | dataDirectory               | r/w  |     Yes     |     No    |   Yes   |
+| &nbsp;&nbsp;&nbsp;`<temp>/`                           | cacheDirectory              | r/w  |     No      |     Yes\* |   Yes   |
+| &nbsp;&nbsp;&nbsp;`<temp>/`                           | tempDirectory               | r/w  |     No      |     Yes\* |   Yes   |
+
+** User data folder build upon the paths provided by [electron](https://github.com/electron/electron/blob/main/docs/api/app.md#appgetpathname)
+* %APPDATA% on Windows
+* $XDG_CONFIG_HOME or ~/.config on Linux
+* ~/Library/Application Support on macOS
 
 ## Android Quirks
 
