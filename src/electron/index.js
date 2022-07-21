@@ -21,8 +21,10 @@
 const fs = require('fs');
 const nodePath = require('path');
 const electron = require('electron');
-// const cordovaFS = require('../../www/FileSystem');
-// const DirectoryEntry = require('../../www/DirectoryEntry');
+
+// Brought in with package.json.
+const mime = require('mime-types');
+
 function log(...args) {
     console.log(...args);
 }
@@ -361,7 +363,7 @@ const getFileMetadata = async ([args]) => {
         // log(JSON.stringify(stats));
         return {
             size: stats.size,
-            type: "text/plain", //"text/directory", // inputURL.isDirectory ? "text/directory" : resourceApi.getMimeType(toNativeUri(inputURL)));
+            type: getMimeTypeFromFile(stats.name), //"text/directory", // inputURL.isDirectory ? "text/directory" : resourceApi.getMimeType(toNativeUri(inputURL)));
             name: stats.name, // new File(inputURL.path).getName());
             fullPath: baseURLstr, // inputURL.path
             lastModifiedDate: stats.mtime
@@ -417,18 +419,31 @@ const getParentHandler = async ([args]) => {
 }
 
 const readAsDataURLHandler = async ([args]) => {
-    log("readAsDataURLHandler");
-    notImplementedYet(args);
+    const [fname, start, end] = args;
+    const buffer = await readAsBuffer(fname, start, end);
+    const encoding = "base64";
+    const mime = getMimeTypeFromFile(fname);
+    const base64 = buffer.toString(encoding);
+    const uri = "data:" + mime + ';' + encoding + ',' + base64; 
+    return uri;
+}
+
+function getMimeTypeFromFile(filename) {
+    // const mime = "text/plain";
+    const mimeType = mime.lookup(filename) || 'application/octet-stream'
+    return mimeType;
 }
 
 const readAsBinaryStringHandler = async ([args]) => {
-    log("readAsBinaryStringHandler");
-    notImplementedYet(args);
+    const [fname, start, end] = args;
+    const bufferFile = await readAsBuffer(fname, start, end);
+    return bufferFile.toString("binary");
 }
 
 const readAsArrayBufferHandler = async ([args]) => {
-    log("readAsArrayBufferHandler");
-    notImplementedYet(args);
+    const [fname, start, end] = args;
+    const buffer = readAsBuffer(fname, start, end);
+    return buffer;
 }
 
 const readAsTextHandler = async ([args]) => { 
@@ -438,6 +453,14 @@ const readAsTextHandler = async ([args]) => {
     await new Promise((resolve, reject) => { fs.read(fd, buffer, 0, buffer.length, start, (err) => { if (err) { reject(err); } else { resolve(buffer); } }) });
     await new Promise((resolve, reject) => { fs.close(fd, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     return buffer.toString(encoding);
+}
+
+const readAsBuffer = async function(fname, start, end) {
+    const buffer = Buffer.alloc(end - start);
+    let fd = await new Promise((resolve, reject) => { fs.open(fname, 'r', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
+    await new Promise((resolve, reject) => { fs.read(fd, buffer, 0, buffer.length, start, (err) => { if (err) { reject(err); } else { resolve(buffer); } }) });
+    await new Promise((resolve, reject) => { fs.close(fd, (err) => { if (err) { reject(err); } else { resolve(); } }) });
+    return buffer;
 }
 
 const writeHandler = async ([args]) => {
@@ -468,7 +491,7 @@ const toRootFileSystem = (uri, fsName, fsPath, isDirectory) => {
 
 const requestFileSystemHandler = async ([args]) => {
     const [fstype, requiredSize] = args;
-    let requestedPath = pathsPrefix.applicationDirectory;
+    let requestedPath = pathsPrefix.cacheDirectory;
     let stats = await new Promise((resolve, reject) => { fs.stat(requestedPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     
     return {
