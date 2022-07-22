@@ -489,6 +489,19 @@ const requestFileSystemHandler = async ([args]) => {
     }
 }
 
+
+
+const truncateHandler = async ([args]) => {
+    var path = nodePath.resolve(args[0]);
+    var len = nodePath.resolve(args[1]);
+    
+    if (!path) {
+        throw FileError.NOT_FOUND_ERR;
+    }
+
+    await new Promise((resolve, reject) => { fs.truncate(path, len, (err) => { if (err) { reject(err); } else { resolve(); } }) });
+}
+
 const resolveLocalFileSystemURIHandler = async ([args]) => {
     var path = nodePath.resolve(args[0]);
 
@@ -571,8 +584,8 @@ module.exports = {
     write: writeHandler,
     requestFileSystem: requestFileSystemHandler,
     resolveLocalFileSystemURI: resolveLocalFileSystemURIHandler,
+    truncate: truncateHandler,
     // exec's below are not implemented in browser platform
-    truncate: notifyNotSupported,
     requestAllFileSystems: notifyNotSupported,
     // method below is used for backward compatibility w/ old File plugin implementation
     _getLocalFilesystemPath: _getLocalFilesystemPathHandler
