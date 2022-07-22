@@ -239,10 +239,12 @@ const getFileHandler = async ([args]) => {
         } else if (options.create === true && stats) {
             // https://nodejs.org/docs/latest-v10.x/api/fs.html#fs_fs_open_path_flags_mode_callback
             if (stats.isFile()) {
-                newFileEntry = await new Promise((resolve, reject) => { fs.open(fullPath, 'w', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
+                // File exists, I think technically is meant to overwrite it 'w' but android/ios seem to append 'a'.
+                let fd = await new Promise((resolve, reject) => { fs.open(fullPath, 'a', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
+                await new Promise((resolve, reject) => { fs.close(fd, (err) => { if (err) { reject(err); } else { resolve(); } }) });
 
                 return {
-                    name: newFileEntry.name,
+                    name: nodePath.basename(fullPath),
                     fullPath: fullPath,
                     size: 0,
                     lastModifiedDate: new Date(),
@@ -384,6 +386,7 @@ const moveToHandler = async ([args]) => {
     // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fspromises_rename_oldpath_newpath
     // await fs.fsPromises.rename(srcPath, name);
     const target = nodePath.resolve(parentFullPath, name);
+    await new Promise((resolve, reject) => { fs.rm(target, { force: true }, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     await new Promise((resolve, reject) => { fs.rename(srcPath, target, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     return toEntry(name, target, null);
 }
@@ -402,8 +405,8 @@ const removeHandler = async ([args]) => {
     var [fullPath] = args;
     let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     if (stats.isDirectory()) {
-        // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fspromises_rm_path_options
-        await new Promise((resolve, reject) => { fs.rm(fullPath, { recursive: false }, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+        // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fs_rmdir_path_options_callback
+        await new Promise((resolve, reject) => { fs.rmdir(fullPath, { recursive: false }, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     } else {
         await new Promise((resolve, reject) => { fs.unlink(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
     }
@@ -492,8 +495,8 @@ const requestFileSystemHandler = async ([args]) => {
 
 
 const truncateHandler = async ([args]) => {
-    var path = nodePath.resolve(args[0]);
-    var len = nodePath.resolve(args[1]);
+    var path = args[0];
+    var len = args[1];
     
     if (!path) {
         throw FileError.NOT_FOUND_ERR;
