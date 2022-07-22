@@ -52,11 +52,11 @@ var pathsPrefix = {
     // Read-only directory where the application is installed.
     applicationDirectory: nodePath.dirname(electron.app.getAppPath()) + nodePath.sep,
     // Where to put app-specific data files.
-    dataDirectory: nodePath.resolve(electron.app.getPath('userData'), 'userData') + nodePath.sep,
+    dataDirectory: nodePath.resolve(electron.app.getPath('userData'), 'data') + nodePath.sep,
+    documentsDirectory: nodePath.resolve(electron.app.getPath('documents'), electron.app.getName()) + nodePath.sep,
     // Cached files that should survive app restarts.
     // Apps should not rely on the OS to delete files in here.
     cacheDirectory: electron.app.getPath('temp') + nodePath.sep,
-
     tempDirectory: electron.app.getPath('temp') + nodePath.sep
 };
 
