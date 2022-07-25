@@ -25,10 +25,6 @@ const electron = require('electron');
 // Brought in with package.json.
 const mime = require('mime-types');
 
-function log(...args) {
-    console.log(...args);
-}
-
 const FileError = {
     // File error codes
     // Found in DOMException
