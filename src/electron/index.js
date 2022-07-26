@@ -225,13 +225,7 @@ const getFileHandler = async ([args]) => {
             let newFileEntry = await new Promise((resolve, reject) => { fs.open(fullPath, 'w', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
             await new Promise((resolve, reject) => { fs.close(newFileEntry, (err) => { if (err) { reject(err); } else { resolve(); } }) });
     
-            return {
-                name: newFileEntry.name,
-                fullPath: fullPath,
-                size: 0,
-                lastModifiedDate: new Date(),
-                storagePath: fullPath
-            }
+            return toFileEntry(fullPath);
         } else if (options.create === true && stats) {
             // https://nodejs.org/docs/latest-v10.x/api/fs.html#fs_fs_open_path_flags_mode_callback
             if (stats.isFile()) {
@@ -239,26 +233,15 @@ const getFileHandler = async ([args]) => {
                 let fd = await new Promise((resolve, reject) => { fs.open(fullPath, 'a', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
                 await new Promise((resolve, reject) => { fs.close(fd, (err) => { if (err) { reject(err); } else { resolve(); } }) });
 
-                return {
-                    name: nodePath.basename(fullPath),
-                    fullPath: fullPath,
-                    size: 0,
-                    lastModifiedDate: new Date(),
-                    storagePath: fullPath
-                }
+                return toFileEntry(fullPath);
+                
             } else {
                 if (errorCallback) {
                     errorCallback(window.FileError.INVALID_MODIFICATION_ERR);
                 }
             }
     
-            return {
-                name: newFileEntry.name,
-                fullPath: fullPath,
-                size: 0,
-                lastModifiedDate: new Date(),
-                storagePath: fullPath
-            }
+            return toFileEntry(fullPath);
         } else if ((!options.create || options.create === false) && !stats) {
             // If create is not true and the path doesn't exist, getFile must fail.
             if (errorCallback) {
@@ -274,13 +257,7 @@ const getFileHandler = async ([args]) => {
             // Otherwise, if no other error occurs, getFile must return a FileEntry
             // corresponding to path.
     
-            return {
-                name: stats.name,
-                fullPath: fullPath,
-                size: 0,
-                lastModifiedDate: new Date(),
-                storagePath: fullPath
-            }
+            return toFileEntry(fullPath);
         }
     } catch(e) {
         throw e;
@@ -356,13 +333,15 @@ const getFileMetadata = async ([args]) => {
             
         // let size = 0; // inputURL.isDirectory ? 0 : getAssetSize(inputURL.path);
         // log(JSON.stringify(stats));
-        return {
+        const name = nodePath.basename(baseURLstr);
+        let metadata = {
             size: stats.size,
-            type: getMimeTypeFromFile(stats.name), //"text/directory", // inputURL.isDirectory ? "text/directory" : resourceApi.getMimeType(toNativeUri(inputURL)));
-            name: stats.name, // new File(inputURL.path).getName());
+            type: getMimeTypeFromFile(name), //"text/directory", // inputURL.isDirectory ? "text/directory" : resourceApi.getMimeType(toNativeUri(inputURL)));
+            name: name, // new File(inputURL.path).getName());
             fullPath: baseURLstr, // inputURL.path
             lastModifiedDate: stats.mtime
         }
+        return metadata;
     } catch (e) {
         return null;
     }
@@ -561,6 +540,17 @@ const toDirectoryEntry = (path, filesystem) => {
         filesystemName: filesystem ? filesystem : 'temporary',
         nativeURL: path
     };
+}
+
+const toFileEntry = (fullPath) => {
+    const name = nodePath.basename(fullPath);
+    return {
+        name: name,
+        fullPath: fullPath,
+        size: 0,
+        lastModifiedDate: new Date(),
+        storagePath: fullPath
+    }
 }
 
 // https://cordova.apache.org/docs/en/11.x/reference/cordova-plugin-file/index.html
