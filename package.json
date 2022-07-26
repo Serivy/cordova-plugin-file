@@ -1,10 +1,10 @@
 {
-  "name": "cordova-plugin-file",
+  "name": "cordova-plugin-file-electron",
   "version": "7.0.1-dev",
-  "description": "Cordova File Plugin",
+  "description": "Cordova File Plugin (Electron)",
   "types": "./types/index.d.ts",
   "cordova": {
-    "id": "cordova-plugin-file",
+    "id": "cordova-plugin-file-electron",
     "platforms": [
       "android",
       "browser",
