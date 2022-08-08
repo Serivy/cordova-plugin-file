@@ -215,9 +215,7 @@ const getFileHandler = async ([args]) => {
             // If create and exclusive are both true, and the path already exists,
             // getFile must fail.
     
-            if (errorCallback) {
-                errorCallback(window.FileError.PATH_EXISTS_ERR);
-            }
+            throw FileError.PATH_EXISTS_ERR;
         } else if (options.create === true && !stats) {
             // If create is true, the path doesn't exist, and no other error occurs,
             // getFile must create it as a zero-length file and return a corresponding
@@ -236,23 +234,19 @@ const getFileHandler = async ([args]) => {
                 return toFileEntry(fullPath);
                 
             } else {
-                if (errorCallback) {
-                    errorCallback(window.FileError.INVALID_MODIFICATION_ERR);
-                }
+                throw FileError.INVALID_MODIFICATION_ERR;
             }
     
             return toFileEntry(fullPath);
         } else if ((!options.create || options.create === false) && !stats) {
+            // Apparently is this now acceptable according to android and ios.
+            return toFileEntry(fullPath);
             // If create is not true and the path doesn't exist, getFile must fail.
-            if (errorCallback) {
-                errorCallback(window.FileError.NOT_FOUND_ERR);
-            }
+            throw FileError.NOT_FOUND_ERR;
         } else if ((!options.create || options.create === false) && stats && stats.isDirectory()) {
             // If create is not true and the path exists, but is a directory, getFile
             // must fail.
-            if (errorCallback) {
-                errorCallback(window.FileError.TYPE_MISMATCH_ERR);
-            }
+            throw FileError.TYPE_MISMATCH_ERR;
         } else {
             // Otherwise, if no other error occurs, getFile must return a FileEntry
             // corresponding to path.
@@ -378,12 +372,21 @@ const copyToHandler = async ([args]) => {
 
 const removeHandler = async ([args]) => {
     var [fullPath] = args;
-    let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
-    if (stats.isDirectory()) {
-        // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fs_rmdir_path_options_callback
-        await new Promise((resolve, reject) => { fs.rmdir(fullPath, { recursive: false }, (err) => { if (err) { reject(err); } else { resolve(); } }) });
-    } else {
-        await new Promise((resolve, reject) => { fs.unlink(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+    try {
+        let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
+        if (stats.isDirectory()) {
+            // https://nodejs.org/docs/latest-v14.x/api/fs.html#fs_fs_rmdir_path_options_callback
+            await new Promise((resolve, reject) => { fs.rmdir(fullPath, { recursive: false }, (err) => { if (err) { reject(err); } else { resolve(); } }) });
+        } else {
+            await new Promise((resolve, reject) => { fs.unlink(fullPath, (err) => { if (err) { reject(err); } else { resolve(); } }) });
+        }
+    } catch (e) {
+        // Android and IOS don't fail when a file doesnt exist to be deleted.
+        if (e.code === "ENOENT") {
+            return;
+        }
+
+        throw e;
     }
 }
 
