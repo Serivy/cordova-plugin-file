@@ -66,11 +66,11 @@ const toEntry = function(name, fullPath, lastModified = null) {
     }
 }
 
-const requestAllPathsHandler = async ([args]) => {
+const requestAllPathsHandler = async (args) => {
     return pathsPrefix;
 }
 
-const getDirectoryHandler = async ([args]) => {
+const getDirectoryHandler = async (args) => {
     var rootPath = args[0];
     var path = args[1];
     var options = args[2];
@@ -168,7 +168,7 @@ const getDirectoryHandler = async ([args]) => {
     };
 }
 
-const removeRecursively = async ([args]) => {
+const removeRecursively = async (args) => {
     var [fullPath] = args;
     // Has to be a directory?
     let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
@@ -185,7 +185,7 @@ const removeRecursively = async ([args]) => {
  * @param {*} param0 
  * @returns {Entry}
  */
-const getFileHandler = async ([args]) => {
+const getFileHandler = async (args) => {
     var [dirname, path, options] = args;
     let fullPath = dirname + path;
     let baseName = nodePath.basename(fullPath);
@@ -281,7 +281,7 @@ const getFileHandler = async ([args]) => {
     // }
 }
 
-const readEntriesHandler = async ([args]) => {
+const readEntriesHandler = async (args) => {
     var [dirname] = args;
     var results = [];
     let files = await new Promise((resolve, reject) => { fs.readdir(dirname, {withFileTypes: true}, (err, files) => { if (err) { reject(err); } else { resolve(files); } }) });
@@ -305,7 +305,7 @@ const readEntriesHandler = async ([args]) => {
     return results;
 }
 
-const getFileMetadata = async ([args]) => {
+const getFileMetadata = async (args) => {
     var [baseURLstr] = args;
     // log("getFileMetadata " + JSON.stringify(args));
     
@@ -341,11 +341,11 @@ const getFileMetadata = async ([args]) => {
     }
 }
 
-const setMetadata = async ([args]) => {
+const setMetadata = async (args) => {
     throw "not implemented";
 }
 
-const moveToHandler = async ([args]) => {
+const moveToHandler = async (args) => {
     var srcPath = args[0];
     // parentFullPath and name parameters is ignored because
     // args is being passed downstream to exports.copyTo method
@@ -360,7 +360,7 @@ const moveToHandler = async ([args]) => {
     return toEntry(name, target, null);
 }
 
-const copyToHandler = async ([args]) => {
+const copyToHandler = async (args) => {
     var srcPath = args[0];
     var parentFullPath = args[1];
     var name = args[2];
@@ -370,7 +370,7 @@ const copyToHandler = async ([args]) => {
     return toEntry(name, target, null);
 }
 
-const removeHandler = async ([args]) => {
+const removeHandler = async (args) => {
     var [fullPath] = args;
     try {
         let stats = await new Promise((resolve, reject) => { fs.stat(fullPath, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }) });
@@ -390,11 +390,11 @@ const removeHandler = async ([args]) => {
     }
 }
 
-const getParentHandler = async ([args]) => {
+const getParentHandler = async (args) => {
     throw "not implemented";
 }
 
-const readAsDataURLHandler = async ([args]) => {
+const readAsDataURLHandler = async (args) => {
     const [fname, start, end] = args;
     const buffer = await readAsBuffer(fname, start, end);
     const encoding = "base64";
@@ -410,19 +410,19 @@ function getMimeTypeFromFile(filename) {
     return mimeType;
 }
 
-const readAsBinaryStringHandler = async ([args]) => {
+const readAsBinaryStringHandler = async (args) => {
     const [fname, start, end] = args;
     const bufferFile = await readAsBuffer(fname, start, end);
     return bufferFile.toString("binary");
 }
 
-const readAsArrayBufferHandler = async ([args]) => {
+const readAsArrayBufferHandler = async (args) => {
     const [fname, start, end] = args;
     const buffer = readAsBuffer(fname, start, end);
     return buffer;
 }
 
-const readAsTextHandler = async ([args]) => { 
+const readAsTextHandler = async (args) => { 
     const [fname, encoding, start, end] = args;
     const buffer = Buffer.alloc(end - start);
     let fd = await new Promise((resolve, reject) => { fs.open(fname, 'r', (err, fd) => { if (err) { reject(err); } else { resolve(fd); } }) });
@@ -439,7 +439,7 @@ const readAsBuffer = async function(fname, start, end) {
     return buffer;
 }
 
-const writeHandler = async ([args]) => {
+const writeHandler = async (args) => {
     var [fname, data, offset, isBinary] = args;
     var nativeURL;
     const buffer = Buffer.from(data ? data : "");
@@ -453,7 +453,7 @@ const writeHandler = async ([args]) => {
     return writeBytes;
 }
 
-const requestFileSystemHandler = async ([args]) => {
+const requestFileSystemHandler = async (args) => {
     const [fstype, requiredSize] = args;
     let requestedPath = fstype == 1 ? pathsPrefix.dataDirectory : pathsPrefix.tempDirectory;
     // Could check to see if requiredSize storage exists on disk.
@@ -472,7 +472,7 @@ const requestFileSystemHandler = async ([args]) => {
 
 
 
-const truncateHandler = async ([args]) => {
+const truncateHandler = async (args) => {
     var path = args[0];
     var len = args[1];
     
@@ -483,7 +483,7 @@ const truncateHandler = async ([args]) => {
     await new Promise((resolve, reject) => { fs.truncate(path, len, (err) => { if (err) { reject(err); } else { resolve(); } }) });
 }
 
-const resolveLocalFileSystemURIHandler = async ([args]) => {
+const resolveLocalFileSystemURIHandler = async (args) => {
     var path = nodePath.resolve(args[0]);
 
     if (!path) {
@@ -505,11 +505,11 @@ const resolveLocalFileSystemURIHandler = async ([args]) => {
     }
 }
 
-const notifyNotSupported = async ([args]) => {
+const notifyNotSupported = async (args) => {
     throw "not implemented";
 }
 
-const _getLocalFilesystemPathHandler = async ([args]) => {
+const _getLocalFilesystemPathHandler = async (args) => {
     throw "not implemented";
 }
 
