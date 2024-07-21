@@ -1,7 +1,7 @@
 {
-  "name": "cordova-plugin-file-electron",
-  "version": "7.0.6",
-  "description": "Cordova File Plugin (Electron)",
+  "name": "cordova-plugin-file",
+  "version": "8.1.1-dev",
+  "description": "Cordova File Plugin",
   "types": "./types/index.d.ts",
   "cordova": {
     "id": "cordova-plugin-file-electron",
@@ -42,12 +42,16 @@
         "cordova-android": ">=10.0.0"
       },
       "8.0.0": {
-        "cordova": ">100",
-        "cordova-electron": ">=3.0.0"
+        "cordova-electron": ">=3.0.0",
+        "cordova-android": ">=12.0.0"
+      },
+      "9.0.0": {
+        "cordova-electron": ">=4.0.0",
+        "cordova": ">100"
       }
     }
   },
   "devDependencies": {
-    "@cordova/eslint-config": "^3.0.0"
+    "@cordova/eslint-config": "^5.0.0"
   }
 }
