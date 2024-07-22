@@ -459,7 +459,7 @@ const requestFileSystemHandler = async (args) => {
     // Could check to see if requiredSize storage exists on disk.
 
     try {
-        const resolved = await resolveLocalFileSystemURIHandler([[requestedPath]]);
+        const resolved = await resolveLocalFileSystemURIHandler([requestedPath]);
     
         return {
             name: requestedPath,
